@@ -157,4 +157,23 @@ network_df[3]=as.vector(tf_lip_cor)
 colnames(network_df)=c("tf","lipid","cor")
 write.table(network_df,"network_df.txt", row.names = FALSE)
 
+##################################### Network filtering and splitting #########################################
+
+# Keep only interactions having 1 or -1 correlation coefficients:
+filtered_net=network_df[network_df$cor == 1 | network_df$cor == -1,]
+
+# Convertion of th IDs into class IDs:
+to_match=filtered_net
+ponctuation=gsub("[0-9]|:|;|/|_", "", filtered_net$lipid)
+to_match$lipid=gsub(" $", "", ponctuation)
+
+# Extraction of the unique class IDs:
+class_vect=unique(to_match$lipid)
+
+# Creation of a sub network for each class:
+for (i in class_vect){
+  pattern=match(to_match$lipid, paste(i), nomatch = 0)
+  pattern=ifelse(pattern == 1, TRUE, FALSE)
+  write.table(filtered_net[pattern,], paste(i,".txt"), row.names = FALSE)
+}
 
