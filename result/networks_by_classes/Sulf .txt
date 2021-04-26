@@ -1,0 +1,11 @@
+"tf" "lipid" "cor"
+"ETV4" "Sulf 38:0;2" 1
+"HNF4G" "Sulf 38:0;2" -1
+"IRF1" "Sulf 38:0;2" -1
+"IRF4" "Sulf 38:0;2" -1
+"NFYA" "Sulf 38:0;2" -1
+"PPARG" "Sulf 38:0;2" -1
+"RELB" "Sulf 38:0;2" 1
+"RXRA" "Sulf 38:0;2" -1
+"SMAD1" "Sulf 38:0;2" 1
+"TP53" "Sulf 38:0;2" 1
