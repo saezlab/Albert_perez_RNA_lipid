@@ -29,10 +29,10 @@ norm_counts= norm_counts[rowSums(is.na(norm_counts[,c(11:13)])) <2,]
 # Removing duplicated genes:
 dup_genes=unique(norm_counts$Symbol[duplicated(norm_counts$Symbol)])
 
-# Initialisation of thhe row numbers:
+# Initialisation of the row indices:
 rownames(norm_counts)=NULL
 
-# Print the indice of the duplicated genes and their average counts:
+# Print the indices of the duplicated genes and their average counts:
 for (i in 1:length(dup_genes)) {
   print(rownames(norm_counts[norm_counts$Symbol==dup_genes[i],]))
   print(rowSums(norm_counts[norm_counts$Symbol==dup_genes[i],-1],na.rm = TRUE))
