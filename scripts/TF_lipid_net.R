@@ -162,7 +162,7 @@ write.table(network_df,"network_df.txt", row.names = FALSE)
 # Keep only interactions having 1 or -1 correlation coefficients:
 filtered_net=network_df[network_df$cor == 1 | network_df$cor == -1,]
 
-# Convertion of th IDs into class IDs:
+# Convertion of the IDs into class IDs:
 to_match=filtered_net
 ponctuation=gsub("[0-9]|:|;|/|_", "", filtered_net$lipid)
 to_match$lipid=gsub(" $", "", ponctuation)
