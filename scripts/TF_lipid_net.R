@@ -38,7 +38,7 @@ for (i in 1:length(dup_genes)) {
   print(rowSums(norm_counts[norm_counts$Symbol==dup_genes[i],-1],na.rm = TRUE))
 }
 
-# For each duplicated gene, only the copy having the highest average counts is preserved:
+# For each duplicated gene, only the copy having the highest counts sum is preserved:
 to_remove=as.numeric(c(8979,10985,10861,10805,10743,10648,10527,10273,9430,rownames(norm_counts[norm_counts$Symbol==dup_genes[2],])[c(1:10,12:13)]))
 norm_counts=norm_counts[-c(to_remove),]
 
