@@ -29,7 +29,6 @@ ui = fluidPage(
   ))),
   tabPanel("About", 
            div(includeMarkdown("dula.Rmd")),
-           h4("Author: Anis Mansouri"),
            h4("E-Mail: anis.mansouri.dz@gmail.com.")))
   
 )#,
@@ -140,4 +139,3 @@ server = function(input, output, session) {
 }
 shinyApp(ui, server)
 
-#a=readRDS("tst.rds")
