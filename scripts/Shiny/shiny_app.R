@@ -29,8 +29,7 @@ ui = fluidPage(
   
   ))),
   tabPanel("About", 
-           div(includeMarkdown("dula.Rmd")),
-           h4("Author: Anis Mansouri"),
+           div(includeMarkdown("about.Rmd")),
            h4("E-Mail: anis.mansouri.dz@gmail.com.")))
   
 )#,
