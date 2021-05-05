@@ -2,7 +2,6 @@ library(shiny)
 library(shinyjs)
 library(shinythemes)
 library(shinybusy)
-options(repos = BiocManager::repositories())
 
 
 ui = fluidPage(
