@@ -51,7 +51,7 @@ dorothea_ABC <- as.data.frame(dorothea_mm[dorothea_mm$confidence %in% c("A","B",
 
 dorothea_ABC_viper <- df_to_viper_regulon(dorothea_ABC[,c(3,1,4)])
 
-TF_act <- as.data.frame(viper(eset = eset, regulon = dorothea_ABC_viper, pleiotropy = T, nes = T, minsize = 15, eset.filter = F))
+TF_act <- as.data.frame(viper(eset = eset, regulon = dorothea_ABC_viper, pleiotropy = F, nes = T, minsize = 5, eset.filter = F))
 
 TF_act_top <- TF_act[apply(TF_act, 1, max) > 2.5,]
 
