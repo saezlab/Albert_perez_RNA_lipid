@@ -105,75 +105,72 @@ write.table(merged_lip,"proc_lip.txt", row.names = TRUE)
 
 
 library(dorothea)
-library(decoupleR)
+library(viper)
 
 # Extraction of A, B and C confidence regulons:
-dorothea_ABC=dorothea_hs[dorothea_hs$confidence %in% c("A", "B", "C"),]
+dorothea_ABC=as.data.frame(dorothea_mm[dorothea_mm$confidence %in% c("A", "B", "C"),])
+dorothea_ABC$tf=toupper(dorothea_ABC$tf)
+dorothea_ABC$target=toupper(dorothea_ABC$target)
 
-# Addition of the likelihood column to make the set suitable to run viper():
-dorothea_ABC=cbind(dorothea_ABC, rep(1,dim(dorothea_ABC)[1]))
-colnames(dorothea_ABC)[5]="likelihood"
-tf_estimation=decoupleR::run_viper(merged_rep, dorothea_ABC)
+# Conversion to viper() regulon format:
+dorothea_ABC_viper= df_to_viper_regulon(dorothea_ABC[,c(3,1,4)])
 
-# viper() output:
-write.table(tf_estimation, "viper_output.txt", row.names = FALSE)
-
-# Reshaping the the viper output (TF in rows and conditions in columns):
-estimation_set=matrix(nrow = length(unique(tf_estimation$tf)), ncol = 4)
-rownames(estimation_set)=unique(tf_estimation$tf)
-colnames(estimation_set)=colnames(merged_rep)
-estimation_set[1,]=as.data.frame(tf_estimation)[1:4,4]
-for (i in 2:dim(estimation_set)[1]) {
-  estimation_set[i,]=as.data.frame(tf_estimation)[(i+3):(i+6),4]
-}
-
-# Creation of the new TF-Act set:
-write.table(estimation_set, "tf_activity.txt")
+# TF_Act estimation:
+tf_estimation=viper(eset = merged_rep, regulon = dorothea_ABC_viper, pleiotropy = F, nes = T, minsize = 5, eset.filter = F)
+write.table(tf_estimation, "tf_activity.txt", row.names = FALSE)
 
 
-########################################################### Network Inference ##############################################################
+########################################################### TF-Lipid Correlation ##############################################################
 
 library(WGCNA)
 
-# Spearman correlation between TF-Act and lipids levels:
-tf_lip_cor=WGCNA::cor(t(estimation_set), t(merged_lip), method = "spearman")
-write.table(tf_lip_cor,"tf_act_lipid_cor.txt")
+# Genes of interest:
+selected_genes=c("ATF4", "ATF6", "XBP1", "NR1H3", "HNF4A") # LXR = NR1H3
 
-# save.image("transcripdom.RData")
+# Bicor correlation between the genes of interest and all the lipids (605):
+tf_lip_cor_1=WGCNA::bicor(t(merged_lip),t(tf_estimation[rownames(tf_estimation) %in% c(selected_genes),]))
+write.table(tf_lip_cor_1,"tf_act_lipid_cor_1.txt")
+
+# Lipids of interest:
+selected_lipids=c("DAG 16:0;0_16:0;0", "DAG 16:0;0_18:0;0", "LPA 16:0;0", "PA 16:0;0_16:0;0", "PC 16:0;0_16:1;0","PC 16:0;0_16:0;0","PE 16:0;0_16:1;0","PS 16:0;0_16:1;0","PS 16:1;0_18:0;0","PG 16:0;0_16:1;0","PG 16:0;0_16:0;0","PI 16:0;0_16:1;0","LPC 16:0;0","LPE 16:0;0","LPE 18:0;0","LPG 16:0;0",
+"LPI 16:0;0","LPI 18:0;0")
+
+# Bicor correlation between the lipids of interest and all the genes (252):
+tf_lip_cor_2=WGCNA::bicor(t(tf_estimation), t(merged_lip[rownames(merged_lip) %in% c(selected_lipids),]))
+write.table(tf_lip_cor_2,"tf_act_lipid_cor_2.txt")
 
 
-# Creation of the TF-Lipid network:
+# Reshaping of the TF-Lipid correlation data set:
+
+## Reshaping tf_lip_cor_1:
 tf_vect=NULL
-for (i in 1:dim(estimation_set)[1]) {
-  tf_vect=c(tf_vect,rep(rownames(estimation_set)[i], 605))
+for (i in 1:dim(tf_lip_cor_1)[2]) {
+  tf_vect=c(tf_vect,rep(colnames(tf_lip_cor_1)[i], 605))
 }
 
-lip_vect=rep(rownames(merged_lip), 271)
+lip_vect=rep(rownames(tf_lip_cor_1), 5)
 
 network_df=as.data.frame(matrix(nrow = length(tf_vect), ncol = 3))
 network_df[1]=tf_vect
 network_df[2]=lip_vect
-network_df[3]=as.vector(tf_lip_cor)
+network_df[3]=as.vector(tf_lip_cor_1)
 colnames(network_df)=c("tf","lipid","cor")
-write.table(network_df,"network_df.txt", row.names = FALSE)
+network_df=network_df[order(abs(network_df$cor), decreasing = TRUE),]
+write.table(network_df,"tf_lip_cor_1.txt", row.names = FALSE)
 
-##################################### Network filtering and splitting #########################################
+## Reshaping tf_lip_cor_2:
 
-# Keep only interactions having 1 or -1 correlation coefficients:
-filtered_net=network_df[network_df$cor == 1 | network_df$cor == -1,]
-
-# Convertion of the IDs into class IDs:
-to_match=filtered_net
-ponctuation=gsub("[0-9]|:|;|/|_", "", filtered_net$lipid)
-to_match$lipid=gsub(" $", "", ponctuation)
-
-# Extraction of the unique class IDs:
-class_vect=unique(to_match$lipid)
-
-# Creation of a sub network for each class:
-for (i in class_vect){
-  pattern=match(to_match$lipid, paste(i), nomatch = 0)
-  pattern=ifelse(pattern == 1, TRUE, FALSE)
-  write.table(filtered_net[pattern,], paste(i,".txt"), row.names = FALSE)
+tf_vect=NULL
+for (i in 1:dim(tf_lip_cor_2)[1]) {
+  tf_vect=c(tf_vect,rep(rownames(tf_lip_cor_2)[i], 9))
 }
 
+lip_vect=rep(colnames(tf_lip_cor_2), 252)
+
+network_df=as.data.frame(matrix(nrow = length(tf_vect), ncol = 3))
+network_df[1]=tf_vect
+network_df[2]=lip_vect
+network_df[3]=as.vector(t(tf_lip_cor_2))
+colnames(network_df)=c("tf","lipid","cor")
+network_df=network_df[order(abs(network_df$cor), decreasing = TRUE),]
+write.table(network_df,"tf_lip_cor_2.txt", row.names = FALSE)
