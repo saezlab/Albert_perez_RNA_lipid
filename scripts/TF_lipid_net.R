@@ -174,3 +174,118 @@ network_df[3]=as.vector(t(tf_lip_cor_2))
 colnames(network_df)=c("tf","lipid","cor")
 network_df=network_df[order(abs(network_df$cor), decreasing = TRUE),]
 write.table(network_df,"tf_lip_cor_2.txt", row.names = FALSE)
+
+
+##################################### Barplots of the differential expressions of TFs of interest #########
+
+# Data loading:
+act_diff=read.table("TF_act.txt", sep = ",", header = TRUE)
+colnames(act_diff)[4:6]=c("POvsCtrl", "OAvsPO", "PAvsPO")
+act_diff$TF=toupper(act_diff$TF)
+
+# Barplots:
+
+ATF4=barplot(as.matrix(act_diff[act_diff$TF == "ATF4",-1]),ylim = c(-2,7), main = "Differential analysis of ATF4 estimated activity")
+ATF6=barplot(as.matrix(act_diff[act_diff$TF == "ATF6",-1]),  ylim =c(-5,5),main = "Differential analysis of ATF6 estimated activity")
+XBP1=barplot(as.matrix(act_diff[act_diff$TF == "XBP1",-1]),  ylim =c(-0.1,0.4),main = "Differential analysis of XBP1 estimated activity")
+NR1H3=barplot(as.matrix(act_diff[act_diff$TF == "NR1H3",-1]),  ylim =c(-1.5,0.4),main = "Differential analysis of NR1H3 (LXR) estimated activity")
+HNF4A=barplot(as.matrix(act_diff[act_diff$TF == "HNF4A",-1]), ylim =c(-4,4),main = "Differential analysis of HNF4A estimated activity")
+
+
+######################## Top HNF4A target genes upregulated by PA and downregulated by OA ##########
+
+# Data loading:
+OA_Ctrl=read.table("file_OAvsCtrl.txt", header = TRUE)
+PA_Ctrl=read.table("file_PAvsCtrl.txt", header = TRUE)
+PO_Ctrl=read.table("file_PAOAvsCtrl.txt", header = TRUE)
+
+# Extraction of HNF4A tagets:
+HNF4A_targets=as.data.frame(dorothea_mm[dorothea_mm$tf=="Hnf4a",3])
+HNF4A_targets=as.character(HNF4A_targets$target)
+
+# HNF4A targets having a significatly changing expression in OA condition:
+OA_targets=OA_Ctrl[OA_Ctrl$Symbol %in% c(HNF4A_targets),c(8, 3, 6)]
+OA_targets=as.data.frame(na.omit(OA_targets)) # Remove empty cells
+OA_targets=OA_targets[OA_targets$Pvalue <= 0.05,] # Set a p-value threshold=0.05
+OA_targets$log2FC=ifelse(OA_targets$log2FC >= 0, 1, -1)
+OA_targets=OA_targets[OA_targets$Pvalue > 0,]
+OA_targets=OA_targets[order(OA_targets$log2FC),]
+
+# Select downregulated targets:
+OA_down_tagets=OA_targets[OA_targets$log2FC == -1,]
+write.table(OA_down_tagets$Symbol, "OA_down_tagets.txt", col.names = FALSE)
+
+# Plot HNF4A targets' expression under OA condotion:
+barplot(OA_targets$log2FC, names.arg = c(OA_targets$Symbol), ylab  = "Mode of regulation", las = 2, yaxt="none", main = "Expression of HNF4A target genes under OA condition")
+axis(2, at=c(1,-1), labels=c("Up","Down"), las = 1)
+
+# HNF4A targets having a significatly changing expression in PA condition:
+PA_targets=PA_Ctrl[PA_Ctrl$Symbol %in% c(HNF4A_targets),c(8, 3, 6)]
+PA_targets=as.data.frame(na.omit(PA_targets)) # Remove empty cells
+PA_targets=PA_targets[PA_targets$Pvalue <= 0.05,] # Set a p-value threshold=0.05
+PA_targets$log2FC=ifelse(PA_targets$log2FC >= 0, 1, -1)
+PA_targets=PA_targets[PA_targets$Pvalue > 0,]
+PA_targets=PA_targets[order(PA_targets$log2FC, decreasing = TRUE),]
+
+# Select upregulated targets:
+PA_up_tagets=PA_targets[PA_targets$log2FC == 1,]
+write.table(PA_up_tagets$Symbol, "PA_up_tagets.txt", col.names = FALSE)
+
+# Plot HNF4A targets' expression under PA condotion:
+barplot(PA_targets$log2FC, names.arg = c(PA_targets$Symbol), ylab  = "Mode of regulation", las = 2, yaxt="none", main = "Expression of HNF4A target genes under PA condition")
+axis(2, at=c(1,-1), labels=c("Up","Down"), las = 1)
+
+
+##### What lipid species (OA, PA or PO) could be regulating the target genes Cpt1, Scd2, Scd1, Lpcat3, Lpcat1 #####
+
+# Set the genes of interest:
+target_genes=c("Cpt1a", "Scd2", "Scd1", "Lpcat3", "Lpcat1") # Cpt1 = Cpt1a
+
+# Extract the genes of interest's behaviour  under OA condtion:
+from_OA=OA_Ctrl[OA_Ctrl$Symbol %in% c(target_genes),]
+from_OA$log2FC=ifelse(from_OA$log2FC >=0,"Up","Down")
+
+# Extract the genes of interest's behaviour under PA condtion:
+from_PA=PA_Ctrl[PA_Ctrl$Symbol %in% c(target_genes),]
+from_PA$log2FC=ifelse(from_PA$log2FC >=0,"Up","Down")
+
+# Extract the genes of interest's behaviour  under PO condtion:
+from_PO=PO_Ctrl[PO_Ctrl$Symbol %in% c(target_genes),]
+from_PO$log2FC=ifelse(from_PO$log2FC >=0,"Up","Down")
+from_PO[from_PO$Pvalue >= 0.05,3]= "none"
+
+# Create a the heatmap data matrix: 
+cond_vect=as.vector(sapply(c("OA", "PA", "PO"), function (x) {rep(x, length(target_genes))}))
+gene_vect=rep(c("Cpt1a", "Scd2", "Scd1", "Lpcat3", "Lpcat1"), 3)
+heat_mat=cbind(cond_vect, c(from_OA$log2FC, from_PA$log2FC, from_PO$log2FC), c(from_OA$Symbol, from_PA$Symbol, from_PO$Symbol))
+heat_mat=as.data.frame(heat_mat)
+colnames(heat_mat)=c("cond", "mor", "gene")
+
+# Heatmap:
+ggplot(heat_mat, aes(cond, gene)) + geom_tile(aes(fill = factor(mor))) + xlab(label = "Conditions") + ylab(label = "Genes") + scale_fill_manual(values =c("red", "gray", "blue")) + theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=15)) + labs(fill = "Mode of regulation")
+
+####################################### TF-Lipid correlation ###################################
+library(WGCNA)
+
+# Data loading:
+tf_lip_cor=read.table("tf_lip_cor_2.txt", header = TRUE)
+
+# Lipids of interest:
+TAG_precurors=c("DAG 16:0;0_16:0;0")
+saturated_phospholipids=c("PC 16:0;0_16:0;0", "PC 16:0;0_16:1;0", "PE 16:0;0_16:1;0", "PI 16:0;0_16:1;0",
+                          "PS 16:1;0_18:0;0")
+saturated_lysophospholipids=c("LPC 16:0;0", "LPE 18:0;0", "LPI 18:0;0")
+
+# TFs-TAG correlations:
+TAG=tf_lip_cor[tf_lip_cor$lipid == TAG_precurors,]
+write.table(TAG, "TAG.csv", quote = FALSE, row.names = FALSE, sep="\t")
+
+# TFs-Saturated-phospholipids correlations:
+sat_phospholipids=tf_lip_cor[tf_lip_cor$lipid %in% saturated_phospholipids,]
+write.table(sat_phospholipids, "sat_phospholipids.csv", quote = FALSE, row.names = FALSE, sep="\t")
+
+# TFs-Saturated-lysophospholipids correlations:
+sat_lysophospholipids=tf_lip_cor[tf_lip_cor$lipid %in% saturated_lysophospholipids,]
+write.table(sat_lysophospholipids, "sat_lysophospholipids.csv", quote = FALSE, row.names = FALSE , sep="\t")
+
+
