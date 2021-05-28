@@ -288,4 +288,56 @@ write.table(sat_phospholipids, "sat_phospholipids.csv", quote = FALSE, row.names
 sat_lysophospholipids=tf_lip_cor[tf_lip_cor$lipid %in% saturated_lysophospholipids,]
 write.table(sat_lysophospholipids, "sat_lysophospholipids.csv", quote = FALSE, row.names = FALSE , sep="\t")
 
+############################# HNF4A lipid ontology ################################"
 
+
+# Create the HNF4A-Lipids correlation data set:
+tf_lip_cor_1=read.table("tf_lip_cor_1.txt", header = TRUE)
+HNF4A_lipids=tf_lip_cor_1[tf_lip_cor_1$tf == "HNF4A",]
+
+# Create the vector of the lipid classes:
+ponctuation_rm=gsub("[0-9]|:|;|/|_", "", HNF4A_lipids$lipid)
+to_match=gsub(" $", "", ponctuation_rm)
+class_vect=unique(to_match)
+
+# Enrichent analysis:
+library(fgsea)
+set.seed(123)
+
+# Create the rank vector:
+ranks=HNF4A_lipids$cor
+names(ranks) = HNF4A_lipids$lipid
+
+# Create the classes list:
+lip_list=list()
+for (i in class_vect){
+  pattern=match(to_match, paste(i), nomatch = 0)
+  pattern=ifelse(pattern == 1, TRUE, FALSE)
+  lip_list=append(lip_list, list(HNF4A_lipids[pattern,2]))
+}
+names(lip_list)=class_vect
+
+# Run the EA:
+fgseaRes = fgsea(lip_list, ranks, minSize=1, maxSize = 500, nperm=1000)
+fgseaRes=fgseaRes[order(fgseaRes$pval),]
+
+# Plot the p-value of each lipid class:
+barplot(fgseaRes$pval, names.arg = fgseaRes$pathway,las=1, ylab = "p-value", xlab="Lipid class", cex.names = 0.85, main="Enrichment analysis of lipid classes related to HNF4A")
+axis(side = 2, at = 0.05, labels = 0.05, col.axis  = "red", col.ticks = "red",las=1)
+abline(h = 0.05, col= 'red')
+
+# Export the EA metrics:
+write.table(apply(fgseaRes,2,as.character), "EA.csv", row.names = FALSE, sep = "\t")
+
+# Compute the average of the |cor-coefficients| in each class:
+HNF4A_lipids$abs_cor=abs(HNF4A_lipids$cor)
+cor_mean=NULL
+for (i in class_vect){
+  pattern=match(to_match, paste(i), nomatch = 0)
+  pattern=ifelse(pattern == 1, TRUE, FALSE)
+  cor_mean=c(cor_mean, mean(HNF4A_lipids[pattern,4]))
+}
+names(cor_mean)=class_vect
+
+# Plot the average |cor-coefficient| in each class:
+barplot(sort(cor_mean, decreasing = TRUE), ylim=c(0,1), ylab = "Average correlation", xlab = "Lipid class", main = "Average of the HNF4A-Lipid's absolute correlation per lipid class", cex.names = 0.8)
