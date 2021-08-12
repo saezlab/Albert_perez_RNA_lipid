@@ -3,3 +3,8 @@
 **/.DS_Store
 **/.Rhistory
 Manuscript/**
+scripts/albert_tasks.R
+scripts/cor_TF_lipids.R
+scripts/prog_act.R
+Scripts/TF_enzyme_net.R
+.Rproj.user/**
