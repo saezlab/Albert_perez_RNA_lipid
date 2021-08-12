@@ -132,30 +132,63 @@ tf_lip_cor_1=WGCNA::bicor(t(merged_lip),t(tf_estimation[rownames(tf_estimation) 
 write.table(tf_lip_cor_1,"../result/TF_lip_bicor.txt")
 
 # Lipids of interest:
+# selected_lipids=c("DAG 16:0;0_16:0;0", 
+#                   "DAG 16:0;0_18:0;0",
+#                   "LPA 16:0;0",
+#                   "LPA 18:0;0", 
+#                   "LPA 18:1;0",
+#                   "PA 16:0;0_16:0;0",
+#                   "PA 16:0;0_18:1;0",
+#                   "PA 16:0;0_18:2;0",
+#                   "PA 16:1;0_18:0;0",
+#                   "PA 16:1;0_18:1;0",
+#                   "PS 16:1;0_18:0;0",
+#                   "PG 16:0;0_16:1;0",
+#                   "PG 16:0;0_16:0;0",
+#                   "PA 17:1;0_17:1;0",
+#                   "PA 18:0;0_18:1;0",
+#                   "PA 18:0;0_18:2;0",
+#                   "PA 18:1;0_18:1;0",
+#                   "PA 18:1;0_18:2;0",
+#                   "DAG 18:1;0_18:1;0")
+
 selected_lipids=c("DAG 16:0;0_16:0;0", 
                   "DAG 16:0;0_18:0;0",
-                  "LPA 16:0;0",
-                  "LPA 18:0;0", 
-                  "LPA 18:1;0",
                   "PA 16:0;0_16:0;0",
-                  "PA 16:0;0_18:1;0",
-                  "PA 16:0;0_18:2;0",
-                  "PA 16:1;0_18:0;0",
-                  "PA 16:1;0_18:1;0",
-                  "PS 16:1;0_18:0;0",
-                  "PG 16:0;0_16:1;0",
-                  "PG 16:0;0_16:0;0",
-                  "PA 17:1;0_17:1;0",
-                  "PA 18:0;0_18:1;0",
-                  "PA 18:0;0_18:2;0",
                   "PA 18:1;0_18:1;0",
-                  "PA 18:1;0_18:2;0")
+                  "DAG 18:1;0_18:1;0")
 
 # Bicor correlation between the lipids of interest and all the genes (252):
 tf_lip_cor_2=WGCNA::bicor(t(tf_estimation), t(merged_lip[rownames(merged_lip) %in% c(selected_lipids),]))
 
-top_tf_lip_cor_2 <- tf_lip_cor_2[rowMax(tf_lip_cor_2) > 0.97,]
+top_tf_lip_cor_2 <- tf_lip_cor_2[rowMax(abs(tf_lip_cor_2)) > 0.97,]
+
+top_tf_lip_cor_2 <- top_tf_lip_cor_2[top_tf_lip_cor_2[,3] < 0,]
+
+top_tf_lip_cor_2 <- top_tf_lip_cor_2[order(top_tf_lip_cor_2[,3]),]
 
 write.table(tf_lip_cor_2,"../result/lip_TF_bicor.txt")
 
-pheatmap(top_tf_lip_cor_2)
+pheatmap(top_tf_lip_cor_2[,c(3,5,1,2,4)], display_numbers = T, cluster_rows = F, cluster_cols = F)
+
+#####################
+# LPC 16:0,0 / LPC 18:1,0 / LPE 16:0,0 / LPE 18:1,0 / LPI 16:0,0 / LPI 18:1,0 
+
+selected_lipids=c("LPC 16:0;0",
+                  "LPC 18:1;0",
+                  "LPE 16:0;0",
+                  "LPE 18:1;0",
+                  "LPI 16:0;0",
+                  "LPI 18:1;0")
+
+tf_lip_cor_2=WGCNA::bicor(t(tf_estimation), t(merged_lip[rownames(merged_lip) %in% c(selected_lipids),]))
+
+top_tf_lip_cor_2 <- tf_lip_cor_2[rowMax(abs(tf_lip_cor_2)) > 0.99,]
+
+# top_tf_lip_cor_2 <- top_tf_lip_cor_2[top_tf_lip_cor_2[,3] < 0,]
+
+top_tf_lip_cor_2 <- top_tf_lip_cor_2[order(top_tf_lip_cor_2[,1]),]
+
+write.table(tf_lip_cor_2,"../result/lip_TF_bicor_2.txt")
+
+pheatmap(top_tf_lip_cor_2, display_numbers = T, cluster_rows = F, cluster_cols = F)

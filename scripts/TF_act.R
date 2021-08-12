@@ -53,9 +53,9 @@ dorothea_ABC_viper <- df_to_viper_regulon(dorothea_ABC[,c(3,1,4)])
 
 TF_act <- as.data.frame(viper(eset = eset, regulon = dorothea_ABC_viper, pleiotropy = F, nes = T, minsize = 5, eset.filter = F))
 
-TF_act_top <- TF_act[apply(TF_act, 1, max) > 2.5,]
+TF_act_top <- TF_act[apply(abs(TF_act), 1, max) > 4,]
 
-pheatmap(TF_act_top)
+pheatmap(TF_act_top, cluster_cols = F, cluster_rows = F, display_numbers = T)
 
 to_write <- TF_act
 to_write$TF <- row.names(TF_act)
