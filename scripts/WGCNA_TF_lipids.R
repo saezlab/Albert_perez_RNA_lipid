@@ -1,5 +1,5 @@
 library(pheatmap)
-setwd("~/Dropbox/Albert_perez_RNA_lipid/data/")
+setwd("data/")
 source("../scripts/support_functions.R")
 ############################################################# Transcriptomics ############################################################
 

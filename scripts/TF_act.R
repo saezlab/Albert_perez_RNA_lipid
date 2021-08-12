@@ -1,4 +1,3 @@
-setwd("~/Dropbox/Albert_perez_RNA_lipid/")
 source("scripts/support_functions.R")
 library(readr)
 library(dorothea)
